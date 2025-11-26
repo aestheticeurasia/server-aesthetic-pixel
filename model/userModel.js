@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['admin', 'moderator']
+        enum: ['Admin', 'Moderator']
     },
     avatar: {
         type: String,
@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: 'active',
-        enum: ['active', 'blocked']
+        default: 'Active',
+        enum: ['Active', 'Blocked']
     },
 }, { timestamps: true });
 

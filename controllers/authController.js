@@ -152,3 +152,13 @@ export const loginController = async (req, res) => {
         })
     }
 };
+
+//Get all users
+export const getAllUsersController = async (req, res) => {
+    const allUsers = await userModel.find({}).select("-password").sort({ createdAt: -1 });
+    res.status(200).send({
+        success: true,
+        message: "All Users Fetched",
+        users: allUsers,
+    });
+};
