@@ -162,3 +162,29 @@ export const getAllUsersController = async (req, res) => {
         users: allUsers,
     });
 };
+
+//delete user by id
+export const deleteUserController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await userModel.findById(id);
+        if (user.role === "Admin") {
+            return res.status(403).send({
+                success: false,
+                message: "Authorization Error: Admin cannot be deleted",
+            });
+        };
+        await userModel.findByIdAndDelete(id);
+        res.status(200).send({
+            success: true,
+            message: "User and their data deleted successfully",
+        })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Deleting user failed",
+            error
+        })
+    }
+};
