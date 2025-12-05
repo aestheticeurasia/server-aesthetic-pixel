@@ -1,7 +1,10 @@
 import JWT from 'jsonwebtoken'
 import userModel from '../model/userModel.js';
+import dotenv from 'dotenv';
 
-//protected Route token base
+dotenv.config();
+
+//Require Sign
 export const requireSignIn = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -9,20 +12,46 @@ export const requireSignIn = async (req, res, next) => {
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
                 success: false,
-                message: "No token provided"
+                message: "No token provided",
             });
         }
 
         const token = authHeader.split(" ")[1];
+        const decoded = JWT.verify(token, process.env.JWT_SECRET);
 
-        const decode = JWT.verify(token, process.env.JWT_SECRET);
-        req.user = decode;
+        const user = await userModel.findById(decoded._id);
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // TokenVersion Check – this invalidates old tokens immediately
+        if ((user.tokenVersion || 0) !== decoded.tokenVersion) {
+            return res.status(401).json({
+                success: false,
+                message: "Session expired, please log in again",
+            });
+        }
+
+        // If user is blocked, deny access and force logout
+        if (user.status === "Blocked") {
+            return res.status(401).json({
+                success: false,
+                message: "Account is blocked",
+            });
+        }
+
+        // Attach user to req for next middleware
+        req.user = user;
 
         next();
     } catch (error) {
         return res.status(401).json({
             success: false,
-            message: "Invalid or expired token"
+            message: "Invalid or expired token",
         });
     }
 };

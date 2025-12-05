@@ -46,7 +46,11 @@ const userSchema = new mongoose.Schema({
     updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users'
-    }
+    },
+    tokenVersion: {
+        type: Number,
+        default: 0,
+    },
 }, { timestamps: true });
 
 export default mongoose.model('users', userSchema);

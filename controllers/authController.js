@@ -105,7 +105,7 @@ export const loginController = async (req, res) => {
         if ((!email && !phone) || !password) {
             return res.status(400).send({
                 success: false,
-                message: "Invalid Credential",
+                message: "Invalid credential",
             });
         }
 
@@ -113,21 +113,21 @@ export const loginController = async (req, res) => {
         let user = await userModel.findOne({
             $or: [{ email }, { phone }],
         })
-            .populate("createdBy" ,"-password")
+            .populate("createdBy", "-password")
             .populate("updatedBy", "-password");
 
         if (!user) {
             return res.status(404).send({
                 success: false,
-                message: "Invalid Credentials",
+                message: "Invalid credentials",
             });
         }
 
-        // Status Check
+        // Check status
         if (user.status === "Blocked") {
             return res.status(403).send({
                 success: false,
-                message: "Temporarily Blocked. Contact Admin",
+                message: "Temporarily blocked. Contact admin.",
             });
         }
 
@@ -136,25 +136,30 @@ export const loginController = async (req, res) => {
         if (!match) {
             return res.status(400).send({
                 success: false,
-                message: "Invalid Credentials",
+                message: "Invalid credentials",
             });
         }
 
-        // Generate JWT
         const token = JWT.sign(
-            { _id: user._id },
+            {
+                _id: user._id,
+                tokenVersion: user.tokenVersion || 0,
+            },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
-        // Remove password before sending
-        const userData = user.toObject();
-        delete userData.password;
+        // Store token in HTTP-only cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 24 * 60 * 60 * 1000,
+        });
 
         return res.status(200).send({
             success: true,
-            message: "Login Successful",
-            user: userData,
+            message: "Login successful",
             token,
         });
 
@@ -162,16 +167,58 @@ export const loginController = async (req, res) => {
         console.error(error);
         return res.status(500).send({
             success: false,
-            message: "Login Error",
+            message: "Login error",
             error,
         });
     }
 };
 
+//Get Logged in user data
+export const loggedInUserController = async (req, res) => {
+    try {
+        const me = await userModel
+            .findById(req.user._id)
+            .select("-password")
+            .populate("createdBy", "name")
+            .populate("updatedBy", "name");
+
+        if (!me) {
+            return res.status(404).send({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Auto logout if user is blocked
+        if (me.status === "Blocked") {
+            return res.status(401).send({
+                success: false,
+                message: "Your account is blocked",
+            });
+        }
+
+        return res.status(200).send({
+            success: true,
+            message: "Data fetched successfully",
+            user: me,
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({
+            success: false,
+            message: "Error fetching user data",
+        });
+    }
+};
 
 //Get all users
 export const getAllUsersController = async (req, res) => {
-    const allUsers = await userModel.find({}).select("-password").sort({ createdAt: -1 }).populate("createdBy", "name").populate("updatedBy", "name");
+    const allUsers = await userModel.find({})
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .populate("createdBy", "name")
+        .populate("updatedBy", "name");
     res.status(200).send({
         success: true,
         message: "All Users Fetched",
@@ -227,22 +274,29 @@ export const updatePasswordByUserController = async (req, res) => {
         const userId = req.user._id;
         const user = await userModel.findById(userId);
 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
         if (user.status === "Blocked") {
             return res.status(403).json({
                 success: false,
                 message: "Temporarily Blocked. Contact Admin",
             });
-        };
+        }
 
+        // Match new & confirm password
         if (newPassword !== confirmNewPassword) {
             return res.status(400).json({
                 success: false,
                 error: "New password and confirm password do not match",
             });
-        };
+        }
 
-        const updatedData = {};
-
+        // Validate new password length
         if (newPassword && newPassword.length < 6) {
             return res.status(400).json({
                 success: false,
@@ -250,37 +304,36 @@ export const updatePasswordByUserController = async (req, res) => {
             });
         }
 
-        if (newPassword || oldPassword) {
-            if (!oldPassword) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Old password is required to set a new password",
-                });
-            }
-
-            const isMatch = await bcrypt.compare(oldPassword, user.password);
-            if (!isMatch) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Incorrect old password",
-                });
-            }
-
-            if (newPassword) {
-                updatedData.password = await hashPassword(newPassword);
-            }
+        // Verify old password
+        if (!oldPassword) {
+            return res.status(400).json({
+                success: false,
+                error: "Old password is required",
+            });
         }
-        updatedData.updatedBy = userId;
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                error: "Incorrect old password",
+            });
+        }
+
+        user.password = await hashPassword(newPassword);
+        user.tokenVersion += 1;
+        user.updatedBy = userId;
+        await user.save();
+
         const updatedUser = await userModel
-            .findByIdAndUpdate(userId, updatedData, { new: true })
+            .findById(userId)
             .select("-password");
 
         return res.status(200).json({
             success: true,
             message: "Password Updated Successfully",
-            updatedUser,
+            user: updatedUser,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -289,7 +342,6 @@ export const updatePasswordByUserController = async (req, res) => {
         });
     }
 };
-
 
 // Update avatar by user
 export const updateAvatarbyUserController = async (req, res) => {
@@ -337,17 +389,13 @@ export const updateAvatarbyUserController = async (req, res) => {
         });
 
     } catch (error) {
-     console.log("🔥 Avatar Update Error Backend:", error);
-
-    return res.status(500).json({
-        success: false,
-        message: "Avatar Updating Error",
-        error: error.message,
-        stack: error.stack,   // ADD THIS
-    });
+        return res.status(500).json({
+            success: false,
+            message: "Avatar Updating Error",
+            error: error.message,
+        });
     }
 };
-
 
 export const updateUserByAdminController = async (req, res) => {
     try {
