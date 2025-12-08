@@ -2,7 +2,7 @@ import express from 'express';
 import formidable from 'express-formidable';
 import avatarUpload from '../config/multerS3Config.js';
 import { createUserController, deleteUserController, getAllUsersController, loginController, updatePasswordByUserController, updateAvatarbyUserController, updateUserByAdminController, loggedInUserController } from '../controllers/authController.js';
-import { requireSignIn,isAdmin, isModerator } from '../middlewares/authMiddleware.js';
+import { requireSignIn, isAdmin, isModerator, isActive } from '../middlewares/authMiddleware.js';
 
 //declare router
 const router = express.Router();
@@ -14,16 +14,16 @@ router.post("/create-user", requireSignIn, isAdmin, avatarUpload.single("avatar"
 router.post("/login", formidable(), loginController);
 
 //get logged in user
-router.get("/me", requireSignIn, loggedInUserController);
+router.get("/me", requireSignIn, isActive, loggedInUserController);
 
 //Get All Users
-router.get("/all-users", requireSignIn, getAllUsersController);
+router.get("/all-users", requireSignIn, isActive, getAllUsersController);
 
 //update password by user
-router.put("/update-password", requireSignIn, formidable(), updatePasswordByUserController);
+router.put("/update-password", requireSignIn, isActive, formidable(), updatePasswordByUserController);
 
 //update avatar by user
-router.put("/update-avatar", requireSignIn, avatarUpload.single("avatar"), updateAvatarbyUserController);
+router.put("/update-avatar", requireSignIn, isActive, avatarUpload.single("avatar"), updateAvatarbyUserController);
 
 //update user by admin
 router.put("/update-user/:id", requireSignIn, isAdmin, formidable(), updateUserByAdminController);
