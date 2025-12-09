@@ -14,6 +14,10 @@ const subCategorySchema = new mongoose.Schema(
             required: true,
             lowercase: true
         },
+        description: {
+            type: String,
+            required: true,
+        },
         parentCategory: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Category",

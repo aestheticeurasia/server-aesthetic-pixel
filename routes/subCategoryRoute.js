@@ -1,6 +1,6 @@
 import express from 'express';
 import formidable from 'express-formidable';
-import { createSubCategoryController, getAllSubCategoriesController, getSubCategoriesByParentController } from '../controllers/subCategoryController.js';
+import { createSubCategoryController, deleteSubCategoryController, getAllSubCategoriesController, getSubCategoriesByParentController, updateSubCategoryController } from '../controllers/subCategoryController.js';
 import { requireSignIn, isAdmin, isModerator } from '../middlewares/authMiddleware.js';
 
 //declare router
@@ -14,5 +14,11 @@ router.get("/get-all-sub-categories", getAllSubCategoriesController);
 
 //get sub category by parent
 router.get("/by-parent", getSubCategoriesByParentController);
+
+//update sub category
+router.put("/update-sub-category/:id", requireSignIn, isAdmin, formidable(), updateSubCategoryController);
+
+//delete single sub category
+router.delete("/delete-sub-category/:id", requireSignIn, isAdmin, deleteSubCategoryController);
 
 export default router;

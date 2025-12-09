@@ -70,9 +70,6 @@ export const createSubCategoryController = async (req, res) => {
     }
 };
 
-//update sub category controller
-export const updateSubCategoryController = async (req, res) => { };
-
 //get all sub categories controller
 export const getAllSubCategoriesController = async (req, res) => {
     try {
@@ -126,7 +123,7 @@ export const getSubCategoriesByParentController = async (req, res) => {
                 }
             },
 
-            { $sort: { "parentDetails.name": 1 } } 
+            { $sort: { "parentDetails.name": 1 } }
         ]);
 
         res.status(200).send({
@@ -143,6 +140,45 @@ export const getSubCategoriesByParentController = async (req, res) => {
     }
 };
 
+//update sub category controller
+export const updateSubCategoryController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, slug, parentCategory } = req.fields;
+        const updatedBy = req.user?._id;
+        const subCategory = await subCategoryModel.findByIdAndUpdate(
+            id,
+            { name, slug, parentCategory, updatedBy },
+            { new: true }
+        );
+        res.status(200).send({
+            success: true,
+            message: "Subcategory updated successfully",
+            subCategory,
+        });
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Failed to update subcategory",
+            error: error.message,
+        });
+    }
+};
 
 //delete single sub category controller
-export const deleteSubCategoryController = async (req, res) => { };
+export const deleteSubCategoryController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await subCategoryModel.findByIdAndDelete(id);
+        res.status(200).send({
+            success: true,
+            message: "Subcategory deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Failed to delete subcategory",
+            error: error.message,
+        });
+    }
+};

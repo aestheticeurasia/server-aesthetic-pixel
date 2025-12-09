@@ -53,7 +53,7 @@ export const createCategoryController = async (req, res) => {
 
 
     } catch (error) {
-        res.send({
+        res.status(500).send({
             success: false,
             message: 'Category Creation Error',
             error: error.message
@@ -62,7 +62,29 @@ export const createCategoryController = async (req, res) => {
 };
 
 //update category controller
-export const updateCategoryController = async (req, res) => { };
+export const updateCategoryController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, slug, description } = req.fields;
+        const updatedBy = req.user?._id;
+        const category = await categoryModel.findByIdAndUpdate(
+            id,
+            { name, description, slug, updatedBy },
+            { new: true }
+        );
+        res.status(200).send({
+            success: true,
+            message: 'Category updated successfully',
+            category
+        });
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: 'Category Update Error',
+            error: error.message
+        });
+    }
+};
 
 //get all categories controller
 export const getAllCategoriesController = async (req, res) => {
@@ -74,7 +96,7 @@ export const getAllCategoriesController = async (req, res) => {
             categories
         });
     } catch (error) {
-        res.send({
+        res.status(500).send({
             success: false,
             message: 'Error fetching categories',
             error: error.message
@@ -82,5 +104,172 @@ export const getAllCategoriesController = async (req, res) => {
     }
 };
 
-//delete single category controller
-export const deleteCategoryController = async (req, res) => { };
+
+//delete parent and subcategory all together
+export const deleteCategoryController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await subCategoryModel.deleteMany({ parentCategory: id });
+
+        await categoryModel.findByIdAndDelete(id);
+
+        res.status(200).send({
+            success: true,
+            message: "Category and related subcategories deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Error deleting category",
+            error: error.message,
+        });
+    }
+};
+
+// Get categories with subcategories and populate createdBy & updatedBy (for both)
+export const getCategoriesWithSubsController = async (req, res) => {
+    try {
+        const data = await categoryModel.aggregate([
+            // Lookup subcategories
+            {
+                $lookup: {
+                    from: "subcategories",
+                    localField: "_id",
+                    foreignField: "parentCategory",
+                    as: "subCategories"
+                }
+            },
+
+            // Populate category createdBy
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "createdByDetails"
+                }
+            },
+            { $unwind: { path: "$createdByDetails", preserveNullAndEmptyArrays: true } },
+
+            // Populate category updatedBy
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "updatedBy",
+                    foreignField: "_id",
+                    as: "updatedByDetails"
+                }
+            },
+            { $unwind: { path: "$updatedByDetails", preserveNullAndEmptyArrays: true } },
+
+            {
+                $lookup: {
+                    from: "users",
+                    let: { subs: "$subCategories" },
+                    pipeline: [
+                        { $match: { $expr: { $in: ["$_id", "$$subs.createdBy"] } } },
+                        { $project: { _id: 1, name: 1, email: 1, avatar: 1 } }
+                    ],
+                    as: "subCreatedByUsers"
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    let: { subs: "$subCategories" },
+                    pipeline: [
+                        { $match: { $expr: { $in: ["$_id", "$$subs.updatedBy"] } } },
+                        { $project: { _id: 1, name: 1, email: 1, avatar: 1 } }
+                    ],
+                    as: "subUpdatedByUsers"
+                }
+            },
+            {
+                $addFields: {
+                    subCategories: {
+                        $map: {
+                            input: "$subCategories",
+                            as: "sub",
+                            in: {
+                                _id: "$$sub._id",
+                                name: "$$sub.name",
+                                slug: "$$sub.slug",
+                                description: "$$sub.description",
+                                parentCategory: "$$sub.parentCategory",
+                                createdAt: "$$sub.createdAt",
+                                updatedAt: "$$sub.updatedAt",
+
+                                createdBy: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: "$subCreatedByUsers",
+                                                as: "u",
+                                                cond: { $eq: ["$$u._id", "$$sub.createdBy"] }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                },
+
+                                updatedBy: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: "$subUpdatedByUsers",
+                                                as: "u",
+                                                cond: { $eq: ["$$u._id", "$$sub.updatedBy"] }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
+            // Final projection
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    slug: 1,
+                    description: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+
+                    createdBy: {
+                        _id: "$createdByDetails._id",
+                        name: "$createdByDetails.name",
+                        email: "$createdByDetails.email",
+                        avatar: "$createdByDetails.avatar"
+                    },
+
+                    updatedBy: {
+                        _id: "$updatedByDetails._id",
+                        name: "$updatedByDetails.name",
+                        email: "$updatedByDetails.email",
+                        avatar: "$updatedByDetails.avatar"
+                    },
+
+                    subCategories: 1
+                }
+            }
+        ]);
+
+        res.status(200).send({
+            success: true,
+            categories: data
+        });
+
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Error loading categories with populated subcategories",
+            error: error.message
+        });
+    }
+};
