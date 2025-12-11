@@ -183,6 +183,42 @@ export const updateSubCategoryController = async (req, res) => {
             });
         }
 
+        //check name in Category
+        const exisitingCategory = await categoryModel.findOne({ name: name });
+        if (exisitingCategory && exisitingCategory._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Category already exist"
+            });
+        }
+
+        // Check name in SubCategory
+        const exisitingSubCategory = await subCategoryModel.findOne({ name: name });
+        if (exisitingSubCategory && exisitingSubCategory._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Sub-Category already exist"
+            });
+        }
+
+        // Check slug in Category
+        const categoryWithSameSlug = await categoryModel.findOne({ slug });
+        if (categoryWithSameSlug && categoryWithSameSlug._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Slug already exist in categories",
+            });
+        }
+
+        // Check slug in SubCategory
+        const subCategoryWithSameSlug = await subCategoryModel.findOne({ slug });
+        if (subCategoryWithSameSlug) {
+            return res.status(409).send({
+                success: false,
+                message: "Slug already exist in sub-categories",
+            });
+        }
+
         const updatedBy = req.user?._id;
         const subCategory = await subCategoryModel.findByIdAndUpdate(
             id,

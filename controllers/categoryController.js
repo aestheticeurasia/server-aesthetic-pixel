@@ -66,6 +66,44 @@ export const updateCategoryController = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, slug, description } = req.fields;
+
+        //check name in Category
+        const exisitingCategory = await categoryModel.findOne({ name: name });
+        if (exisitingCategory && exisitingCategory._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Category already exist"
+            });
+        }
+
+        // Check name in SubCategory
+        const exisitingSubCategory = await subCategoryModel.findOne({ name: name });
+        if (exisitingSubCategory && exisitingSubCategory._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Sub-Category already exist"
+            });
+        }
+
+        // Check slug in Category
+        const categoryWithSameSlug = await categoryModel.findOne({ slug });
+        if (categoryWithSameSlug && categoryWithSameSlug._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Slug already exist in categories",
+            });
+        }
+
+        // Check slug in SubCategory
+        const subCategoryWithSameSlug = await subCategoryModel.findOne({ slug });
+        if (subCategoryWithSameSlug) {
+            return res.status(409).send({
+                success: false,
+                message: "Slug already exist in sub-categories",
+            });
+        }
+
+        //get updatedBy from logged-in user
         const updatedBy = req.user?._id;
         const category = await categoryModel.findByIdAndUpdate(
             id,
@@ -127,7 +165,7 @@ export const deleteCategoryController = async (req, res) => {
     }
 };
 
-// Get categories with subcategories and populate createdBy & updatedBy (for both)
+// Get categories with subcategories
 export const getCategoriesWithSubsController = async (req, res) => {
     try {
         const data = await categoryModel.aggregate([
