@@ -18,13 +18,13 @@ const blogSchema = new mongoose.Schema(
 
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "categories",
+      ref: "Category",
       required: true,
     },
 
     subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "subCategories",
+      ref: "SubCategory",
     },
 
     coverPhoto: {

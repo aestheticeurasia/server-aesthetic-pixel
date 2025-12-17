@@ -202,13 +202,13 @@ export const updateSubCategoryController = async (req, res) => {
         }
 
         // // Check slug in Category
-        // const categoryWithSameSlug = await categoryModel.findOne({ slug });
-        // if (categoryWithSameSlug && categoryWithSameSlug._id.toString() !== id) {
-        //     return res.status(409).send({
-        //         success: false,
-        //         message: "Slug already exist in categories",
-        //     });
-        // }
+        const categoryWithSameSlug = await categoryModel.findOne({ slug });
+        if (categoryWithSameSlug && categoryWithSameSlug._id.toString() !== id) {
+            return res.status(409).send({
+                success: false,
+                message: "Slug already exist in categories",
+            });
+        }
 
         // // Check slug in SubCategory
         // const subCategoryWithSameSlug = await subCategoryModel.findOne({ slug });
