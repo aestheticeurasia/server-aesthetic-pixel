@@ -37,7 +37,7 @@ export const requireSignIn = async (req, res, next) => {
         }
 
         // If user is blocked, deny access and force logout
-        if (user.status === "BLOCKED") {
+        if (user.status === "Blocked") {
             return res.status(401).json({
                 success: false,
                 message: "Account is blocked",

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,        
+      unique: true,
       lowercase: true,
       trim: true,
       index: true,
@@ -13,8 +13,8 @@ const userSchema = new mongoose.Schema(
 
     phone: {
       type: String,
-      unique: true,             
-      sparse: true,            
+      unique: true,
+      sparse: true,
       trim: true,
     },
 
@@ -25,10 +25,14 @@ const userSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["ACTIVE", "BLOCKED"],
-      default: "ACTIVE",
+      enum: ["Active", "Blocked"],
+      default: "Active",
     },
-
+    userType: {
+      type: String,
+      trim: true,
+      required: true,
+    },
     tokenVersion: {
       type: Number,
       default: 0,

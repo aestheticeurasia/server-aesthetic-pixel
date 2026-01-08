@@ -36,7 +36,7 @@ export const loginController = async (req, res) => {
         }
 
         // Check status
-        if (user.status === "BLOCKED") {
+        if (user.status === "Blocked") {
             return res.status(403).send({
                 success: false,
                 message: "Temporarily blocked. Contact admin.",
@@ -90,7 +90,7 @@ export const loggedInUserController = async (req, res) => {
     try {
         const userId = req.user._id;
 
-        // Fetch user 
+        // Fetch user
         const user = await userModel.findById(userId).select("-password");
         if (!user) {
             return res.status(404).send({
@@ -100,24 +100,35 @@ export const loggedInUserController = async (req, res) => {
         }
 
         // Auto logout if user is blocked
-        if (user.status === "BLOCKED") {
+        if (user.status === "Blocked") {
             return res.status(401).send({
                 success: false,
                 message: "Your account is blocked",
             });
         }
 
-        // Fetch profiles
-        const employeeProfile = await EmployeeProfile.findOne({ userId }).populate("createdBy", "name").populate("updatedBy", "name");
-        const clientProfile = await ClientProfile.findOne({ userId }).populate("createdBy", "name").populate("updatedBy", "name");
+        // Initialize profile variables
+        let employeeProfile = null;
+        let clientProfile = null;
+
+        // Fetch profiles based on userType
+        if (user.userType === "Employee") {
+            employeeProfile = await EmployeeProfile.findOne({ userId })
+                .populate("createdBy", "name")
+                .populate("updatedBy", "name");
+        } else if (user.userType === "Client") {
+            clientProfile = await ClientProfile.findOne({ userId })
+                .populate("createdBy", "name")
+                .populate("updatedBy", "name");
+        }
 
         return res.status(200).send({
             success: true,
             message: "Data fetched successfully",
             user,
             profiles: {
-                employee: employeeProfile || null,
-                client: clientProfile || null,
+                employee: employeeProfile,
+                client: clientProfile,
             },
         });
     } catch (error) {
@@ -129,6 +140,7 @@ export const loggedInUserController = async (req, res) => {
         });
     }
 };
+
 
 //Get all users
 export const getAllUsersController = async (req, res) => {
@@ -419,7 +431,7 @@ export const createClientController = async (req, res) => {
                 email,
                 phone,
                 password: hashedPassword,
-                status: "ACTIVE",
+                userType: "Client",
                 avatar: req.file ? `https://${process.env.CLOUDFRONT_DOMAIN}/${req.file.key}` : null,
             }).save();
         }
@@ -428,14 +440,12 @@ export const createClientController = async (req, res) => {
         const clientProfile = await new ClientProfile({
             userId: user._id,
             name,
-            billingAddress,
-            shippingAddress,
             createdBy: req.user?._id || user._id,
         }).save();
 
         res.status(201).send({
             success: true,
-            message: "Client registered successfully",
+            message: "Registration successfull",
             user,
             clientProfile,
         });
@@ -443,7 +453,7 @@ export const createClientController = async (req, res) => {
         console.error(error);
         res.status(500).send({
             success: false,
-            message: "Client registration error",
+            message: "Registration Error",
             error: error.message,
         });
     }
