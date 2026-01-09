@@ -9,6 +9,7 @@ import subCategoryRoutes from "./routes/subCategoryRoute.js";
 import blogRoutes from "./routes/blogRoute.js";
 import productRoutes from "./routes/productRoute.js";
 import orderRoutes from "./routes/orderRoute.js";
+import pricingRulesRoutes from "./routes/pricingRulesRoutes.js";
 
 //dotenv config
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/api/v1/sub-category", subCategoryRoutes);
 app.use("/api/v1/blog", blogRoutes);
 app.use("/api/v1/product", productRoutes);
 app.use("/api/v1/order", orderRoutes);
+app.use("/api/v1/pricing", pricingRulesRoutes);
 
 
 //rest api

@@ -1,20 +1,22 @@
+import mongoose from "mongoose";
+
 const pricingRulesSchema = new mongoose.Schema(
     {
         defaultPhotoCount: {
             type: Number,
-            default: 4,
+            required: true,
         },
         extraPhotoPrice: {
             type: Number,
-            default: 100,
+            required: true,
         },
         discountRules: [
             {
-                minQuantity: {
+                minQty: {
                     type: Number,
                     required: true,
                 },
-                maxQuantity: {
+                maxQty: {
                     type: Number,
                     required: true,
                 },
@@ -29,10 +31,6 @@ const pricingRulesSchema = new mongoose.Schema(
         maxQtyPerOrder: {
             type: Number,
             default: 100,
-        },
-        isActive: {
-            type: Boolean,
-            default: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,

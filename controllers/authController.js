@@ -86,7 +86,7 @@ export const loginController = async (req, res) => {
 };
 
 //Get Logged in user data
-export const loggedInUserController = async (req, res) => {
+export const loggedInUserDataController = async (req, res) => {
     try {
         const userId = req.user._id;
 
