@@ -7,6 +7,8 @@ import authRoutes from "./routes/authRoute.js";
 import categoryRoutes from "./routes/categoryRoute.js";
 import subCategoryRoutes from "./routes/subCategoryRoute.js";
 import blogRoutes from "./routes/blogRoute.js";
+import productRoutes from "./routes/productRoute.js";
+import orderRoutes from "./routes/orderRoute.js";
 
 //dotenv config
 dotenv.config();
@@ -27,6 +29,8 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/sub-category", subCategoryRoutes);
 app.use("/api/v1/blog", blogRoutes);
+app.use("/api/v1/product", productRoutes);
+app.use("/api/v1/order", orderRoutes);
 
 
 //rest api
