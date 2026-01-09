@@ -173,7 +173,6 @@ export const getUnifiedPricingRulesController = async (req, res) => {
       });
     }
 
-    // Build unified response
     const productPricing = {
       categories: products.map((p) => ({
         name: p.name,
