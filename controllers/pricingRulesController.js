@@ -1,4 +1,4 @@
-import pricingRulesModel from "../model/PricingRulesModel.js";
+import pricingRulesModel from "../model/pricingRulesModel.js";
 import productModel from "../model/productModel.js";
 
 export const createPricingRulesController = async (req, res) => {
