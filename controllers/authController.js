@@ -425,7 +425,9 @@ export const createClientController = async (req, res) => {
                 });
             }
         } else {
-            // Create User
+           
+           
+         // Create User
             const hashedPassword = await hashPassword(password);
             user = await new userModel({
                 email,
