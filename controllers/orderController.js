@@ -1,4 +1,5 @@
 import orderModel from "../model/orderModel.js";
+import clientModel from "../model/clientModel.js";
 import puppeteer from "puppeteer";
 import ejs from "ejs";
 import path from "path";
@@ -94,10 +95,9 @@ export const getOrdersByUserController = async (req, res) => {
 export const getOrderInvoiceController = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const buyer = req.user.name;
     const order = await orderModel
       .findById(orderId)
-      .populate("createdBy", "email phone");
+      .populate("createdBy", "email phone userType");
 
     if (!order) {
       return res.status(404).json({
@@ -105,16 +105,28 @@ export const getOrderInvoiceController = async (req, res) => {
         message: "Order not found",
       });
     }
-    if (!order.status || order.status === "Cancelled" || order.status === "Pending") {
+
+    if (["Cancelled", "Pending"].includes(order.status)) {
       return res.status(404).json({
         success: false,
         message: "No invoice available",
       });
     }
 
+    // createdBy is USER
+    const userId = order.createdBy._id;
+
+    // fetch client profile using userId
+    const clientProfile = await clientModel
+      .findOne({ userId })
+      .select("name");
+
     const html = await ejs.renderFile(
       join(process.cwd(), "templates", "invoice.ejs"),
-      { order, buyer }
+      {
+        order,
+        buyer: clientProfile?.name || "N/A",
+      }
     );
 
     const browser = await puppeteer.launch({
