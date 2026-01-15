@@ -46,6 +46,18 @@ export const createOrderController = async (req, res) => {
       });
     }
 
+    //create order and invoice id
+    let lastOrder = await orderModel.findOne({}, {}, { sort: { createdAt: -1 } });
+    let nextNumber = 1;
+
+    if (lastOrder && lastOrder.orderId) {
+      const lastNumber = parseInt(lastOrder.orderId.replace("APS", ""));
+      nextNumber = lastNumber + 1;
+    }
+
+    const orderId = `APS${String(nextNumber).padStart(3, "0")}`;
+    const invoiceId = orderId; 
+
     const createdBy = req.user._id;
 
     const order = new orderModel({
@@ -54,6 +66,8 @@ export const createOrderController = async (req, res) => {
       discountedAmount,
       finalPrice,
       paymentDetails,
+      orderId,
+      invoiceId,
       createdBy,
     });
 

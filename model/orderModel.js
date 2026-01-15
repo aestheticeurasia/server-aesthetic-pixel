@@ -2,6 +2,19 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
     {
+        orderId: {
+            type: String,
+            unique: true,
+            required: true,
+            index: true,
+        },
+
+        invoiceId: {
+            type: String,
+            unique: true,
+            required: true,
+            index: true,
+        },
         orderItems: [
             {
                 productId: {
@@ -67,7 +80,12 @@ const orderSchema = new mongoose.Schema(
                 amount: {
                     type: Number,
                     required: true,
-                }
+                },
+                status: {
+                    type: String,
+                    enum: ["Paid", "Unpaid"],
+                    default: "Paid",
+                },
             },
         ],
         createdBy: {
