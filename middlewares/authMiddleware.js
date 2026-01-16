@@ -56,6 +56,28 @@ export const requireSignIn = async (req, res, next) => {
     }
 };
 
+//check if client
+export const isClient = async (req, res, next) => {
+    try {
+        const user = await userModel.findById(req.user._id)
+        if (user.userType !== "Client") {
+            return res.status(401).send({
+                success: false,
+                message: "Account not found"
+            })
+        } else {
+            next();
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(401).send({
+            success: false,
+            message: "Login Error",
+            error
+        });
+    }
+};
+
 //check if admin
 export const isAdmin = async (req, res, next) => {
     try {

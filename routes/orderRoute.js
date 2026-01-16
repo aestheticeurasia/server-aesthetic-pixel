@@ -1,7 +1,7 @@
 import express from 'express';
 import formidable from 'express-formidable';
 import { requireSignIn } from '../middlewares/authMiddleware.js';
-import { createOrderController, dashboardDataController, getOrderInvoiceController, getOrdersByUserController } from '../controllers/orderController.js';
+import { createOrderController, dashboardDataController, getOrderInvoiceController, getOrdersByUserController, userDashboardDataController } from '../controllers/orderController.js';
 
 //declare router
 const router = express.Router();
@@ -17,5 +17,8 @@ router.get('/generate-invoice/:orderId', requireSignIn, getOrderInvoiceControlle
 
 //order data dashboard
 router.get('/dashboard-data', requireSignIn, dashboardDataController);
+
+//user dashboard data
+router.get('/user-dashboard-data', requireSignIn, userDashboardDataController);
 
 export default router;

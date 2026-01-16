@@ -35,6 +35,97 @@ export const loginController = async (req, res) => {
             });
         }
 
+        // Check if client
+        if (user.userType !== "Client") {
+            return res.status(403).send({
+                success: false,
+                message: "Account not found",
+            });
+        }
+
+        // Check status
+        if (user.status === "Blocked") {
+            return res.status(403).send({
+                success: false,
+                message: "Temporarily blocked. Contact admin.",
+            });
+        }
+
+        // Compare password
+        const match = await comparePassword(password, user.password);
+        if (!match) {
+            return res.status(400).send({
+                success: false,
+                message: "Invalid credentials",
+            });
+        }
+
+        const token = JWT.sign(
+            {
+                userId: user._id,
+                tokenVersion: user.tokenVersion || 0,
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        // Store token in HTTP-only cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(200).send({
+            success: true,
+            message: "Login successful",
+            token,
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({
+            success: false,
+            message: "Login error",
+            error,
+        });
+    }
+};
+
+//Login Controller
+export const employeeLoginController = async (req, res) => {
+    try {
+        const { email, phone, password } = req.fields;
+
+        // Validation
+        if ((!email && !phone) || !password) {
+            return res.status(400).send({
+                success: false,
+                message: "Invalid credential",
+            });
+        }
+
+        // Find user
+        const user = await userModel.findOne({
+            $or: [{ email }, { phone }],
+        });
+
+        if (!user) {
+            return res.status(404).send({
+                success: false,
+                message: "Invalid credentials",
+            });
+        }
+
+        // Check if client
+        if (user.userType !== "Employee") {
+            return res.status(403).send({
+                success: false,
+                message: "Account not found",
+            });
+        }
+
         // Check status
         if (user.status === "Blocked") {
             return res.status(403).send({

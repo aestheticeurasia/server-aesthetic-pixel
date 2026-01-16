@@ -208,3 +208,30 @@ export const dashboardDataController = async (req, res) => {
     });
   }
 };
+
+//user dashboard data
+export const userDashboardDataController = async (req, res) => {
+  try {
+    const totalOrders = await orderModel.countDocuments({ createdBy: req.user._id });
+    const pendingOrders = await orderModel.countDocuments({ status: "Pending", createdBy: req.user._id });
+    const acceptedOrders = await orderModel.countDocuments({ status: "Accepted", createdBy: req.user._id });
+    const cancelledOrders = await orderModel.countDocuments({ status: "Cancelled", createdBy: req.user._id });
+
+    res.status(200).send({
+      success: true,
+      message: "User dashboard data fetched successfully",
+      data: {
+        totalOrders,
+        pendingOrders,
+        acceptedOrders,
+        cancelledOrders,
+      },
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error fetching user dashboard data",
+      error: error.message,
+    });
+  }
+};
