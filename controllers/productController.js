@@ -125,4 +125,3 @@ export const deleteProductController = async (req, res) => {
         });
     }
 };
-

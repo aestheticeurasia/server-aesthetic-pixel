@@ -213,50 +213,50 @@ export const loggedInUserDataController = async (req, res) => {
 
 //Get all employees
 export const getAllClientsController = async (req, res) => {
-  try {
-    const users = await userModel
-      .find({ userType: "Client" })
-      .select("-password")
-      .populate("createdBy", "name")
-      .populate("updatedBy", "name")
-      .sort({ createdAt: -1 });
+    try {
+        const users = await userModel
+            .find({ userType: "Client" })
+            .select("-password")
+            .populate("createdBy", "name")
+            .populate("updatedBy", "name")
+            .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      message: "All Clients Fetched",
-      users,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch clients",
-      error: error.message,
-    });
-  }
+        res.status(200).json({
+            success: true,
+            message: "All Clients Fetched",
+            users,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch clients",
+            error: error.message,
+        });
+    }
 };
 
 //Get all employees
 export const getAllEmployeesController = async (req, res) => {
-  try {
-    const users = await userModel
-      .find({ userType: "Employee" })
-      .select("-password")
-      .populate("createdBy", "name")
-      .populate("updatedBy", "name")
-      .sort({ createdAt: -1 });
+    try {
+        const users = await userModel
+            .find({ userType: "Employee" })
+            .select("-password")
+            .populate("createdBy", "name")
+            .populate("updatedBy", "name")
+            .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      message: "All Employees Fetched",
-      users,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch employees",
-      error: error.message,
-    });
-  }
+        res.status(200).json({
+            success: true,
+            message: "All Employees Fetched",
+            users,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch employees",
+            error: error.message,
+        });
+    }
 };
 
 //delete user
@@ -528,9 +528,9 @@ export const createClientController = async (req, res) => {
                 });
             }
         } else {
-           
-           
-         // Create User
+
+
+            // Create User
             const hashedPassword = await hashPassword(password);
             user = await new userModel({
                 name,
@@ -584,7 +584,7 @@ export const createEmployeeController = async (req, res) => {
             });
         }
 
-        if(employeeId){
+        if (employeeId) {
             const existingEmployeeId = await userModel.findOne({ employeeId });
             if (existingEmployeeId) {
                 return res.status(409).send({
@@ -607,7 +607,7 @@ export const createEmployeeController = async (req, res) => {
                 });
             }
         } else {
-         // Create User
+            // Create User
             const hashedPassword = await hashPassword(password);
             user = await new userModel({
                 name,
@@ -631,6 +631,39 @@ export const createEmployeeController = async (req, res) => {
         res.status(500).send({
             success: false,
             message: "User creation Error",
+            error: error.message,
+        });
+    }
+};
+
+//update client status
+export const updateClientStatusController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const user = await userModel.findById(id);
+
+        if (!user || user.userType !== "Client") {
+            return res.status(404).json({
+                success: false,
+                message: "Client not found",
+            });
+        }
+
+        user.status = status;
+        user.updatedBy = req.user?._id;
+        await user.save();
+        const populatedUser = await user.populate("updatedBy", "name");
+        res.status(200).json({
+            success: true,
+            message: `${status}`,
+            user: populatedUser,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Client status updating error",
             error: error.message,
         });
     }

@@ -1,7 +1,7 @@
 import express from 'express';
 import formidable from 'express-formidable';
 import avatarUpload from '../config/multerS3Config.js';
-import { deleteUserController, loginController, updatePasswordByUserController, updateAvatarbyUserController, updateUserByAdminController, loggedInUserDataController, createClientController, employeeLoginController, getAllEmployeesController, getAllClientsController, createEmployeeController } from '../controllers/authController.js';
+import { deleteUserController, loginController, updatePasswordByUserController, updateAvatarbyUserController, updateUserByAdminController, loggedInUserDataController, createClientController, employeeLoginController, getAllEmployeesController, getAllClientsController, createEmployeeController, updateClientStatusController } from '../controllers/authController.js';
 import { requireSignIn, isAdmin, isModerator, isClient, isActive } from '../middlewares/authMiddleware.js';
 
 //declare router
@@ -37,6 +37,9 @@ router.put("/update-avatar", requireSignIn, isActive, avatarUpload.single("avata
 
 //update user by admin
 router.put("/update-user/:id", requireSignIn, isAdmin, formidable(), updateUserByAdminController);
+
+//update client status by admin
+router.put("/update-client/:id", requireSignIn, isAdmin, updateClientStatusController);
 
 //delete single user
 router.delete("/delete-user/:id", requireSignIn, isAdmin, deleteUserController);
