@@ -47,23 +47,40 @@ export const createBlogController = async (req, res) => {
 //get all blogs controller
 export const getAllBlogsController = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 9;
+        const skip = (page - 1) * limit;
 
         const blogs = await blogModel.find({})
+            .select("-jsonContent")
             .populate("createdBy", "name email")
             .populate("category", "name")
             .populate("subCategory", "name")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const totalBlogs = await blogModel.countDocuments({});
 
         //send response
         res.status(200).json({
             success: true,
-            message: "All blogs fetched successfully",
+            message: "Blogs fetched successfully",
             blogs,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalBlogs / limit),
+                totalBlogs,
+                hasNextPage: page * limit < totalBlogs,
+                hasPrevPage: page > 1
+            }
         });
     } catch (error) {
+        console.log(error);
         return res.status(500).json({
             success: false,
             message: "Error fetching blogs",
+            error,
         });
     }
 };
@@ -94,6 +111,37 @@ export const deleteBlogController = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Error deleting blog",
+        });
+    }
+};
+
+//single blog fetch controller
+export const getSingleBlogController = async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        const blogPost = await blogModel
+            .findOne({ slug })
+            .populate("createdBy", "name email")
+            .populate("category", "name")
+            .populate("subCategory", "name");
+
+        if (!blogPost) {
+            return res.status(404).json({
+                success: false,
+                message: "Blog not found",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Blog fetched successfully",
+            blogPost,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching blog",
         });
     }
 };
