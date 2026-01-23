@@ -11,7 +11,7 @@ const router = express.Router();
 router.post("/create-blog", requireSignIn, isModerator, avatarUpload.single("coverPhoto"), createBlogController);
 
 //Blog Routes
-router.get("/get-all-blogs", requireSignIn, isActive, getAllBlogsController);
+router.get("/get-all-blogs", getAllBlogsController);
 
 //get single blog
 router.get("/get-blog/:slug", getSingleBlogController);
